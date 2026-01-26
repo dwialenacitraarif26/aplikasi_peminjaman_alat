@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../logic/auth_controller.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -13,81 +14,170 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   final _authLogic = AuthController();
   bool _isObscure = true;
+  bool _isLoading = false;
 
+  // Fungsi untuk menangani proses login
   void _handleLogin() async {
-    final result = await _authLogic.signIn(_emailController.text, _passwordController.text);
-
-    if (result!.startsWith('error:')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.split(':')[1]), backgroundColor: Colors.red),
-      );
-    } else {
-      // Navigasi Berdasarkan Role
-      Widget destination;
-      if (result == 'admin') {
-        destination = const Scaffold(body: Center(child: Text('HALAMAN ADMIN', style: TextStyle(fontSize: 24))));
-      } else if (result == 'petugas') {
-        destination = const Scaffold(body: Center(child: Text('HALAMAN PETUGAS', style: TextStyle(fontSize: 24))));
-      } else {
-        destination = const Scaffold(body: Center(child: Text('HALAMAN PEMINJAM', style: TextStyle(fontSize: 24))));
-      }
-
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => destination));
+    // 1. Validasi input kosong
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      _showSnackBar("Email dan Password tidak boleh kosong", isError: true);
+      return;
     }
+
+    setState(() => _isLoading = true);
+
+    // 2. Memanggil logika AuthController (Mengambil Role dari Database)
+    final result = await _authLogic.signIn(
+      _emailController.text.trim(), 
+      _passwordController.text.trim()
+    );
+
+    setState(() => _isLoading = false);
+
+    if (result == null) return;
+
+    if (result.startsWith('error:')) {
+      // Jika terjadi error dari Supabase
+      _showSnackBar(result.split(':')[1], isError: true);
+    } else {
+      // Jika sukses, result berisi nama role ('admin', 'petugas', atau 'peminjam')
+      _navigateToDashboard(result);
+    }
+  }
+
+  // Fungsi navigasi berdasarkan role
+  void _navigateToDashboard(String role) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          appBar: AppBar(
+            title: Text("SIMBARA - ${role.toUpperCase()}"),
+            backgroundColor: AppColors.primary,
+          ),
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  role == 'admin' ? Icons.admin_panel_settings : 
+                  role == 'petugas' ? Icons.engineering : Icons.person,
+                  size: 100, 
+                  color: AppColors.primary,
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  "Selamat Datang di Halaman $role",
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 40),
+                ElevatedButton(
+                  onPressed: () => Navigator.pushReplacement(
+                    context, MaterialPageRoute(builder: (context) => const LoginScreen())),
+                  child: const Text("Logout"),
+                )
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showSnackBar(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : Colors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.white,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 40),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 60),
+              const SizedBox(height: 60), 
+
               // Logo Login
               Center(
-                child: Image.asset('assets/images/login.png', width: 140),
+                child: Image.asset(
+                  'assets/images/login.png',
+                  width: 150, 
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => 
+                    const Icon(Icons.image, size: 50, color: AppColors.primary),
+                ),
               ),
-              const SizedBox(height: 40),
+
+              const SizedBox(height: 50), 
               const Text(
                 'Haii!',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF3B59B6)),
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.primary,
+                ),
               ),
               const Text(
                 'Welcome to SIMBARA',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF3B59B6)),
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.primary,
+                ),
+              ),
+              
+              const SizedBox(height: 35),
+
+              // Input E-mail
+              _buildInput(
+                hint: "E-mail",
+                icon: Icons.email,
+                controller: _emailController,
               ),
               const SizedBox(height: 30),
-              
-              // Input E-mail
-              _buildInputLabel("E-mail", Icons.email_outlined, _emailController),
-              const SizedBox(height: 15),
-              
+
               // Input Password
-              _buildInputLabel(
-                "Password", 
-                Icons.lock_outline, 
-                _passwordController, 
-                isPass: true
+              _buildInput(
+                hint: "Password",
+                icon: Icons.lock,
+                controller: _passwordController,
+                isPass: true,
               ),
-              
-              const SizedBox(height: 40),
-              
-              // Tombol Login (Biru Tua)
+
+              const SizedBox(height: 45),
+
+              // Button Login
               SizedBox(
                 width: double.infinity,
                 height: 55,
                 child: ElevatedButton(
-                  onPressed: _handleLogin,
+                  onPressed: _isLoading ? null : _handleLogin,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF3B59B6),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                    elevation: 4,
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(0), // Tidak ada radius
+                    ),
                   ),
-                  child: const Text('Login', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  child: _isLoading 
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text(
+                        'Login',
+                        style: TextStyle(
+                          fontSize: 25,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                 ),
               ),
             ],
@@ -97,26 +187,35 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildInputLabel(String hint, IconData icon, TextEditingController controller, {bool isPass = false}) {
+  Widget _buildInput({
+    required String hint,
+    required IconData icon,
+    required TextEditingController controller,
+    bool isPass = false,
+  }) {
     return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFDDE7FF), // Warna Biru Muda sesuai gambar
-        borderRadius: BorderRadius.circular(5),
+      decoration: const BoxDecoration(
+        color: AppColors.inputBg, // Warna D0E4FF
       ),
       child: TextField(
         controller: controller,
         obscureText: isPass ? _isObscure : false,
+        style: const TextStyle(color: AppColors.darkblue, fontSize: 15),
         decoration: InputDecoration(
           hintText: hint,
-          prefixIcon: Icon(icon, color: const Color(0xFF3B59B6)),
-          suffixIcon: isPass 
-            ? IconButton(
-                icon: Icon(_isObscure ? Icons.visibility_off : Icons.visibility, color: const Color(0xFF3B59B6)),
-                onPressed: () => setState(() => _isObscure = !_isObscure),
-              )
-            : null,
+          hintStyle: TextStyle(color: AppColors.primary.withOpacity(0.5)),
+          prefixIcon: Icon(icon, color: AppColors.primary),
+          suffixIcon: isPass
+              ? IconButton(
+                  icon: Icon(
+                    _isObscure ? Icons.visibility_off : Icons.visibility,
+                    color: AppColors.primary,
+                  ),
+                  onPressed: () => setState(() => _isObscure = !_isObscure),
+                )
+              : null,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 15),
+          contentPadding: const EdgeInsets.symmetric(vertical: 18),
         ),
       ),
     );

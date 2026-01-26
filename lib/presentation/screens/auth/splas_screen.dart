@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import '../../../core/theme/app_colors.dart';
 import 'login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -22,22 +23,47 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF3B59B6),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset('assets/images/splasscreen.png', width: 180),
-            const SizedBox(height: 20),
-            const Text(
-              'SIMBARA',
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: AppColors.primary,
+    body: Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Image.asset(
+            'assets/images/splasscreen.png',
+            width: 160,
+            fit: BoxFit.fitWidth,
+          ),
+          // Bungkus kedua teks ke dalam satu Transform agar keduanya naik bersamaan
+          Transform.translate(
+            offset: const Offset(0, 15), // Mengangkat seluruh grup teks ke atas
+            child: const Column(
+              children: [
+                Text(
+                  'SIMBARA',
+                  style: TextStyle(
+                    fontSize: 40,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                // Sekarang height: 0 atau kecil akan benar-benar terlihat rapat
+                SizedBox(height: 0), 
+                Text(
+                  'Sistem Peminjaman Alat Brantas',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 20,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 }

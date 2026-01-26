@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'SIMBARA',
       // 3. Tentukan halaman awal aplikasi
-      home: const SplashScreen(), 
+      home: SplashScreen(), 
     );
   }
 }
