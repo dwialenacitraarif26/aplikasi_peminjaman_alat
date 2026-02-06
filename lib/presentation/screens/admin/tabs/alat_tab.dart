@@ -16,12 +16,11 @@ class _AlatTabState extends State<AlatTab> {
   String searchQuery = '';
   int? selectedCategoryId;
 
-  // Stream data alat secara real-time
   Stream<List<Map<String, dynamic>>> _getAlatStream() {
     return supabase
         .from('alat')
         .stream(primaryKey: ['id_alat'])
-        .order('nama_alat', ascending: true) // Menjaga urutan agar tidak lompat saat diedit
+        .order('nama_alat', ascending: true)
         .map((maps) {
           return maps.where((alat) {
             final matchesSearch =
@@ -49,18 +48,16 @@ class _AlatTabState extends State<AlatTab> {
                 children: [
                   const Text(
                     "Daftar Alat",
-                    style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.darkblue),
+                    style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: AppColors.darkblue),
                   ),
                   ElevatedButton.icon(
-                    onPressed: () => Navigator.push(
-                        context, MaterialPageRoute(builder: (context) => const CategoryScreen())),
+                    onPressed: () async {
+                      await Navigator.push(context, MaterialPageRoute(builder: (context) => const CategoryScreen()));
+                      if (mounted) setState(() {});
+                    },
                     icon: const Icon(Icons.add, size: 18),
                     label: const Text("Kategori"),
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.darkblue, foregroundColor: Colors.white),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.darkblue, foregroundColor: Colors.white),
                   ),
                 ],
               ),
@@ -78,10 +75,8 @@ class _AlatTabState extends State<AlatTab> {
         backgroundColor: AppColors.darkblue,
         child: const Icon(Icons.add, color: Colors.white, size: 30),
         onPressed: () async {
-          // Tambahkan await untuk mendeteksi saat user kembali dari halaman tambah
-          await Navigator.push(
-              context, MaterialPageRoute(builder: (context) => const AddAlatScreen()));
-          if (mounted) setState(() {}); // Pemicu refresh manual jika stream delay
+          await Navigator.push(context, MaterialPageRoute(builder: (context) => const AddAlatScreen()));
+          if (mounted) setState(() {}); 
         },
       ),
     );
@@ -90,8 +85,7 @@ class _AlatTabState extends State<AlatTab> {
   Widget _buildSearchBar() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 15),
-      decoration:
-          BoxDecoration(color: const Color(0xFF0D1B4E), borderRadius: BorderRadius.circular(30)),
+      decoration: BoxDecoration(color: const Color(0xFF0D1B4E), borderRadius: BorderRadius.circular(30)),
       child: TextField(
         onChanged: (val) => setState(() => searchQuery = val),
         style: const TextStyle(color: Colors.white),
@@ -106,10 +100,11 @@ class _AlatTabState extends State<AlatTab> {
 
   Widget _buildCategoryFilter() {
     return StreamBuilder<List<Map<String, dynamic>>>(
-      stream: supabase.from('kategori').stream(primaryKey: ['id_kategori']),
+      stream: supabase.from('kategori').stream(primaryKey: ['id_kategori']).order('nama_kategori'),
       builder: (context, snapshot) {
         if (!snapshot.hasData) return const SizedBox();
         final categories = snapshot.data!;
+
         return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
@@ -134,9 +129,7 @@ class _AlatTabState extends State<AlatTab> {
         selectedColor: AppColors.darkblue,
         backgroundColor: Colors.white,
         labelStyle: TextStyle(color: isSelected ? Colors.white : AppColors.darkblue),
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-            side: const BorderSide(color: AppColors.darkblue)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10), side: const BorderSide(color: AppColors.darkblue)),
         showCheckmark: false,
       ),
     );
@@ -146,14 +139,11 @@ class _AlatTabState extends State<AlatTab> {
     return StreamBuilder<List<Map<String, dynamic>>>(
       stream: _getAlatStream(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-        if (snapshot.data!.isEmpty) return const Center(child: Text("Tidak ada alat"));
+        if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+        if (!snapshot.hasData || snapshot.data!.isEmpty) return const Center(child: Text("Tidak ada alat"));
         return GridView.builder(
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2, 
-              childAspectRatio: 0.62, // Ukuran kartu panjang sesuai permintaan
-              crossAxisSpacing: 16, 
-              mainAxisSpacing: 16),
+              crossAxisCount: 2, childAspectRatio: 0.65, crossAxisSpacing: 16, mainAxisSpacing: 16),
           itemCount: snapshot.data!.length,
           itemBuilder: (context, index) => _buildAlatCard(snapshot.data![index]),
         );
@@ -163,10 +153,7 @@ class _AlatTabState extends State<AlatTab> {
 
   Widget _buildAlatCard(Map<String, dynamic> alat) {
     return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFD1E4F3), 
-        borderRadius: BorderRadius.circular(20),
-      ),
+      decoration: BoxDecoration(color: const Color(0xFFD1E4F3), borderRadius: BorderRadius.circular(20)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -175,62 +162,39 @@ class _AlatTabState extends State<AlatTab> {
             child: Container(
               margin: const EdgeInsets.all(10),
               width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(15),
-              ),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15)),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(15),
                 child: alat['foto_url'] != null
                     ? Padding(
                         padding: const EdgeInsets.all(10),
-                        child: Image.network(
-                          alat['foto_url'],
-                          fit: BoxFit.contain,
-                        ),
+                        child: Image.network(alat['foto_url'], fit: BoxFit.contain, errorBuilder: (c, e, s) => const Icon(Icons.broken_image)),
                       )
                     : const Icon(Icons.image, color: Colors.grey, size: 40),
               ),
             ),
           ),
-          
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14),
-            child: Text(
-              alat['nama_alat'],
-              style: const TextStyle(
-                fontWeight: FontWeight.bold, 
-                color: AppColors.darkblue, 
-                fontSize: 16
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+            child: Text(alat['nama_alat'], style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.darkblue, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
           ),
-          
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Flexible(child: _getCategoryLabel(alat['kategori_id'])),
-                Text(
-                  "Stok ${alat['stok_total']}", 
-                  style: const TextStyle(fontSize: 11, color: Colors.black54)
-                ),
+                // Menggunakan StreamBuilder agar label kategori juga real-time
+                Flexible(child: _getCategoryLabelRealtime(alat['kategori_id'])),
+                Text("Stok ${alat['stok_total']}", style: const TextStyle(fontSize: 11, color: Colors.black54)),
               ],
             ),
           ),
-          
           Padding(
             padding: const EdgeInsets.fromLTRB(10, 4, 10, 12),
             child: Row(
               children: [
                 _actionBtn("Edit", AppColors.darkblue, () async {
-                  // PERBAIKAN: Gunakan await agar saat kembali langsung refresh
-                  await Navigator.push(
-                      context, 
-                      MaterialPageRoute(builder: (context) => AddAlatScreen(alat: alat)));
+                  await Navigator.push(context, MaterialPageRoute(builder: (context) => AddAlatScreen(alat: alat)));
                   if (mounted) setState(() {}); 
                 }),
                 const SizedBox(width: 8),
@@ -243,19 +207,22 @@ class _AlatTabState extends State<AlatTab> {
     );
   }
 
-  Widget _getCategoryLabel(int? categoryId) {
+  // REKOMENDASI: Gunakan Stream agar label langsung berubah saat kategori dihapus/tambah
+  Widget _getCategoryLabelRealtime(int? categoryId) {
     if (categoryId == null) return const Text("-", style: TextStyle(fontSize: 11));
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      future: supabase.from('kategori').select('nama_kategori').eq('id_kategori', categoryId),
+    
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: supabase.from('kategori').stream(primaryKey: ['id_kategori']).eq('id_kategori', categoryId),
       builder: (context, snapshot) {
         if (snapshot.hasData && snapshot.data!.isNotEmpty) {
           return Text(
             snapshot.data![0]['nama_kategori'], 
-            style: const TextStyle(fontSize: 11, color: Colors.black54),
+            style: const TextStyle(fontSize: 11, color: Colors.black54, fontWeight: FontWeight.w600),
             overflow: TextOverflow.ellipsis,
           );
         }
-        return const Text("...", style: TextStyle(fontSize: 11));
+        // Jika snapshot kosong, berarti kategori dengan ID tersebut sudah dihapus
+        return const Text("-", style: TextStyle(fontSize: 11, color: Colors.redAccent));
       },
     );
   }
@@ -288,17 +255,31 @@ class _AlatTabState extends State<AlatTab> {
         content: const Text("Apakah anda yakin ingin menghapus alat?", textAlign: TextAlign.center),
         actionsAlignment: MainAxisAlignment.center,
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Batal", style: TextStyle(color: Colors.black))),
-          ElevatedButton(
-            onPressed: () async {
-              await supabase.from('alat').delete().eq('id_alat', id);
-              if (mounted) {
-                Navigator.pop(context);
-                setState(() {});
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.darkblue),
-            child: const Text("Iya", style: TextStyle(color: Colors.white)),
+          SizedBox(
+            width: 100,
+            child: OutlinedButton(
+              onPressed: () => Navigator.pop(context),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: AppColors.darkblue),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text("Batal", style: TextStyle(color: AppColors.darkblue)),
+            ),
+          ),
+          const SizedBox(width: 10),
+          SizedBox(
+            width: 100,
+            child: ElevatedButton(
+              onPressed: () async {
+                await supabase.from('alat').delete().eq('id_alat', id);
+                if (mounted) {
+                  Navigator.pop(context);
+                  setState(() {});
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.darkblue, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+              child: const Text("Iya", style: TextStyle(color: Colors.white)),
+            ),
           ),
         ],
       ),

@@ -16,12 +16,13 @@ class AddAlatScreen extends StatefulWidget {
 class _AddAlatScreenState extends State<AddAlatScreen> {
   final supabase = Supabase.instance.client;
   final _formKey = GlobalKey<FormState>();
+  
   late TextEditingController _nameCtrl, _stokCtrl;
   int? _selectedCatId;
   
-  File? _imageFile;      
-  Uint8List? _webImage;  
-  String? _imageUrl;
+  File? _imageFile;      // Untuk Mobile
+  Uint8List? _webImage;  // Untuk Web
+  String? _imageUrl;     // URL Gambar dari DB
   bool _isUploading = false;
 
   @override
@@ -44,9 +45,15 @@ class _AddAlatScreenState extends State<AddAlatScreen> {
       if (pickedFile != null) {
         if (kIsWeb) {
           final bytes = await pickedFile.readAsBytes();
-          setState(() => _webImage = bytes);
+          setState(() {
+            _webImage = bytes;
+            _imageFile = null; // Reset file mobile jika ada
+          });
         } else {
-          setState(() => _imageFile = File(pickedFile.path));
+          setState(() {
+            _imageFile = File(pickedFile.path);
+            _webImage = null; // Reset bytes web jika ada
+          });
         }
       }
     } catch (e) {
@@ -54,29 +61,83 @@ class _AddAlatScreenState extends State<AddAlatScreen> {
     }
   }
 
+  /// Fungsi Upload dengan proteksi nama unik dan anti-cache
   Future<String?> _uploadToStorage() async {
-    // Jika tidak ada perubahan gambar baru (baik di Web maupun Mobile), kembalikan URL lama
+    // Jika tidak ada perubahan gambar baru, gunakan URL yang sudah ada
     if (_imageFile == null && _webImage == null) return _imageUrl;
     
     try {
-      // Gunakan timestamp agar nama file selalu unik, mencegah masalah cache di Supabase
-      final fileName = 'alat_${DateTime.now().millisecondsSinceEpoch}.png';
+      // Buat nama file unik (mencegah error 'file already exists' di Supabase)
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final extension = kIsWeb ? 'png' : _imageFile!.path.split('.').last;
+      final fileName = 'alat_$timestamp.$extension';
       final path = 'public/$fileName';
       
       if (kIsWeb) {
-        await supabase.storage.from('foto_alat').uploadBinary(path, _webImage!);
+        await supabase.storage.from('foto_alat').uploadBinary(
+          path, 
+          _webImage!,
+          fileOptions: const FileOptions(contentType: 'image/png')
+        );
       } else {
-        await supabase.storage.from('foto_alat').upload(path, _imageFile!);
+        await supabase.storage.from('foto_alat').upload(
+          path, 
+          _imageFile!,
+          fileOptions: const FileOptions(upsert: true)
+        );
       }
       
       // Ambil Public URL baru
-      final newUrl = supabase.storage.from('foto_alat').getPublicUrl(path);
+      final String rawUrl = supabase.storage.from('foto_alat').getPublicUrl(path);
       
-      // Tambahkan timestamp di akhir URL untuk mematikan Cache Image di Flutter/Browser
-      return "$newUrl?t=${DateTime.now().millisecondsSinceEpoch}";
+      // Tambahkan query parameter unik agar Flutter tidak mengambil gambar dari cache lama
+      return "$rawUrl?t=$timestamp";
     } catch (e) {
       debugPrint("Gagal upload ke storage: $e");
-      return _imageUrl;
+      return _imageUrl; // Balikkan ke URL lama jika gagal
+    }
+  }
+
+  void _saveData() async {
+    if (_formKey.currentState!.validate()) {
+      setState(() => _isUploading = true);
+      try {
+        // 1. Upload gambar dulu (jika ada yang baru dipilih)
+        final finalImageUrl = await _uploadToStorage();
+
+        // 2. Siapkan data untuk Database
+        final data = {
+          'nama_alat': _nameCtrl.text.trim(), 
+          'stok_total': int.parse(_stokCtrl.text), 
+          'kategori_id': _selectedCatId,
+          'foto_url': finalImageUrl, 
+        };
+        
+        // 3. Update atau Insert
+        if (widget.alat != null) {
+          await supabase
+              .from('alat')
+              .update(data)
+              .eq('id_alat', widget.alat!['id_alat']);
+        } else {
+          await supabase.from('alat').insert(data);
+        }
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Data berhasil disimpan!"), backgroundColor: Colors.green)
+          );
+          Navigator.pop(context, true); 
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Terjadi kesalahan: $e"), backgroundColor: Colors.red)
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _isUploading = false);
+      }
     }
   }
 
@@ -94,7 +155,7 @@ class _AddAlatScreenState extends State<AddAlatScreen> {
         iconTheme: const IconThemeData(color: AppColors.darkblue),
       ),
       body: _isUploading 
-      ? const Center(child: CircularProgressIndicator())
+      ? const Center(child: CircularProgressIndicator(color: AppColors.darkblue))
       : SingleChildScrollView(
         padding: const EdgeInsets.all(25),
         child: Form(
@@ -102,12 +163,12 @@ class _AddAlatScreenState extends State<AddAlatScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Preview Gambar
               Center(
                 child: Stack(
                   children: [
                     Container(
-                      width: 150,
-                      height: 150,
+                      width: 150, height: 150,
                       decoration: BoxDecoration(
                         color: const Color(0xFFD1E4F3),
                         borderRadius: BorderRadius.circular(20),
@@ -119,8 +180,7 @@ class _AddAlatScreenState extends State<AddAlatScreen> {
                       ),
                     ),
                     Positioned(
-                      bottom: 0,
-                      right: 0,
+                      bottom: 0, right: 0,
                       child: GestureDetector(
                         onTap: _pickImage,
                         child: Container(
@@ -138,13 +198,18 @@ class _AddAlatScreenState extends State<AddAlatScreen> {
                 ),
               ),
               const SizedBox(height: 30),
+              
               _label("Nama"),
               _textField(_nameCtrl, "Masukkan nama barang"),
+              
               _label("Kategori"),
               _categoryDropdown(),
+              
               _label("Stok"),
               _textField(_stokCtrl, "10", isNumber: true),
+              
               const SizedBox(height: 40),
+              
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -167,13 +232,14 @@ class _AddAlatScreenState extends State<AddAlatScreen> {
 
   Widget _buildImagePreview() {
     if (kIsWeb && _webImage != null) {
-      return Image.memory(_webImage!, fit: BoxFit.cover, key: ValueKey(_webImage.hashCode));
+      return Image.memory(_webImage!, fit: BoxFit.cover);
     } else if (!kIsWeb && _imageFile != null) {
-      return Image.file(_imageFile!, fit: BoxFit.cover, key: ValueKey(_imageFile!.path));
+      return Image.file(_imageFile!, fit: BoxFit.cover);
     } else if (_imageUrl != null) {
-      return Padding(
-        padding: const EdgeInsets.all(15),
-        child: Image.network(_imageUrl!, fit: BoxFit.contain, key: ValueKey(_imageUrl)),
+      return Image.network(
+        _imageUrl!, 
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, size: 50),
       );
     } else {
       return const Icon(Icons.image_outlined, size: 50, color: Colors.grey);
@@ -190,26 +256,31 @@ class _AddAlatScreenState extends State<AddAlatScreen> {
       controller: ctrl,
       keyboardType: isNumber ? TextInputType.number : TextInputType.text,
       decoration: InputDecoration(
-        hintText: hint, 
-        filled: true,
-        fillColor: Colors.grey[50],
+        hintText: hint, filled: true, fillColor: Colors.grey[50],
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
       ),
-      validator: (value) => value!.isEmpty ? "Harus diisi" : null,
+      validator: (value) => value == null || value.isEmpty ? "Harus diisi" : null,
     );
   }
 
   Widget _categoryDropdown() {
     return StreamBuilder<List<Map<String, dynamic>>>(
-      stream: supabase.from('kategori').stream(primaryKey: ['id_kategori']),
+      stream: supabase.from('kategori').stream(primaryKey: ['id_kategori']).order('nama_kategori'),
       builder: (context, snapshot) {
         final list = snapshot.data ?? [];
+        
+        // PENTING: Cek apakah _selectedCatId yang ada di memori masih ada di daftar kategori terbaru
+        // (Mencegah error jika kategori dihapus saat form terbuka)
+        if (_selectedCatId != null && list.isNotEmpty) {
+          bool isExist = list.any((element) => element['id_kategori'] == _selectedCatId);
+          if (!isExist) _selectedCatId = null;
+        }
+
         return DropdownButtonFormField<int>(
           value: _selectedCatId,
           decoration: InputDecoration(
-            filled: true,
-            fillColor: Colors.grey[50],
+            filled: true, fillColor: Colors.grey[50],
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
           ),
@@ -222,34 +293,5 @@ class _AddAlatScreenState extends State<AddAlatScreen> {
         );
       },
     );
-  }
-
-  void _saveData() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() => _isUploading = true);
-      try {
-        final uploadedUrl = await _uploadToStorage();
-        final data = {
-          'nama_alat': _nameCtrl.text, 
-          'stok_total': int.parse(_stokCtrl.text), 
-          'kategori_id': _selectedCatId,
-          'foto_url': uploadedUrl, // Menyimpan URL unik baru
-        };
-        
-        if (widget.alat != null) {
-          await supabase.from('alat').update(data).eq('id_alat', widget.alat!['id_alat']);
-        } else {
-          await supabase.from('alat').insert(data);
-        }
-        
-        if (mounted) Navigator.pop(context, true); 
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
-        }
-      } finally {
-        if (mounted) setState(() => _isUploading = false);
-      }
-    }
   }
 }
