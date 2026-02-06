@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'core/constants/supabase_constants.dart';
-import 'presentation/screens/auth/splas_screen.dart'; 
+import 'presentation/screens/auth/splas_screen.dart';
+
 void main() async {
   // 1. Pastikan binding sudah siap
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // 2. Koneksi ke Supabase
   await Supabase.initialize(
     url: SupabaseConstants.url,
@@ -24,13 +25,13 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'SIMBARA',
-      theme:  ThemeData(
+      theme: ThemeData(
         // Ini akan mengubah semua teks di aplikasi menjadi Poppins
         textTheme: GoogleFonts.poppinsTextTheme(),
         useMaterial3: true,
       ),
       // halaman awal displash
-      home: const SplashScreen(), 
+      home: const SplashScreen(),
     );
   }
 }

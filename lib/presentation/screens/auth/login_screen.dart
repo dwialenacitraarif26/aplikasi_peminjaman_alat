@@ -185,7 +185,7 @@ class _LoginScreenState extends State<LoginScreen> {
             },
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: TextStyle(color: AppColors.primary.withOpacity(0.5)),
+              hintStyle: const TextStyle(color: AppColors.primary),
               prefixIcon: Icon(icon, color: AppColors.primary),
               suffixIcon: isPass
                   ? IconButton(
