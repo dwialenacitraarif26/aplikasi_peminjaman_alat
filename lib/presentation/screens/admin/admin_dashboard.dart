@@ -4,7 +4,7 @@ import 'tabs/home_tab.dart';
 import 'tabs/alat_tab.dart';
 import 'tabs/aktivitas_tab.dart';
 import 'tabs/pengguna_tab.dart';
-import 'tabs/pengaturan_tab.dart'; // halaman yang mengautr navigasi agar bisa berpindah ke halaman lain
+import 'tabs/pengaturan_tab.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -16,8 +16,7 @@ class AdminDashboard extends StatefulWidget {
 class _AdminDashboardState extends State<AdminDashboard> {
   int _currentIndex = 0;
 
-  // Daftar file tab yang dipanggil
-  final List<Widget> _pages = [
+  final List<Widget> _tabs = [
     const HomeTab(),
     const AlatTab(),
     const AktivitasTab(),
@@ -28,42 +27,65 @@ class _AdminDashboardState extends State<AdminDashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F9FF),
+      backgroundColor: Colors.white,
       body: IndexedStack(
         index: _currentIndex,
-        children: _pages,
+        children: _tabs,
       ),
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: AppColors.darkblue,
-          unselectedItemColor: Colors.grey,
-          onTap: (index) => setState(() => _currentIndex = index),
-          items: [
-            _buildNavItem(Icons.home, "Beranda", 0),
-            _buildNavItem(Icons.inventory, "Alat", 1),
-            _buildNavItem(Icons.show_chart, "Aktivitas", 2),
-            _buildNavItem(Icons.people, "Pengguna", 3),
-            _buildNavItem(Icons.settings, "Pengaturan", 4),
+        // Shadow dan Dekorasi Container Navbar
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(15), // Melengkung halus sesuai gambar
+            topRight: Radius.circular(15),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 10,
+              spreadRadius: 2,
+              offset: const Offset(0, -2), // Bayangan halus ke atas
+            ),
           ],
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(15),
+            topRight: Radius.circular(15),
+          ),
+          child: BottomNavigationBar(
+            currentIndex: _currentIndex,
+            onTap: (index) => setState(() => _currentIndex = index),
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.white,
+            selectedItemColor: AppColors.darkblue,
+            unselectedItemColor: Colors.grey.shade400,
+            selectedFontSize: 10,
+            unselectedFontSize: 10,
+            elevation: 0, // Elevation 0 karena sudah pakai shadow container
+            items: [
+              _buildNavItem(Icons.home_filled, "Beranda", 0),
+              _buildNavItem(Icons.home_work, "Alat", 1),
+              _buildNavItem(Icons.timeline, "Aktivitas", 2),
+              _buildNavItem(Icons.person, "Pengguna", 3),
+              _buildNavItem(Icons.settings, "Pengaturan", 4),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  BottomNavigationBarItem _buildNavItem(
-      IconData icon, String label, int index) {
+  BottomNavigationBarItem _buildNavItem(IconData icon, String label, int index) {
+    bool isSelected = _currentIndex == index;
     return BottomNavigationBarItem(
       icon: Container(
-        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         decoration: BoxDecoration(
-          color:
-              _currentIndex == index ? AppColors.inputBg : Colors.transparent,
-          borderRadius: BorderRadius.circular(15),
+          // Background biru muda oval pada ikon yang dipilih sesuai gambar
+          color: isSelected ? AppColors.inputBg.withOpacity(0.6) : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
         ),
         child: Icon(icon),
       ),
