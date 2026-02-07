@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'form_alat.dart';
 
 class EditAlatScreen extends StatelessWidget {
   final Map<String, dynamic> alat;
