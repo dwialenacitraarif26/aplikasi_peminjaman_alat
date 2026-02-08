@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../auth/login_screen.dart';
+import 'log_aktivitas_screen.dart';
 
 class HomeTab extends StatefulWidget {
   const HomeTab({super.key});
@@ -11,300 +11,315 @@ class HomeTab extends StatefulWidget {
 }
 
 class _HomeTabState extends State<HomeTab> {
-  // Instance supabase diambil dari inisialisasi di main.dart
   final supabase = Supabase.instance.client;
 
-  Future<Map<String, dynamic>> _fetchDashboardData() async {
+  // --- LOGIC FUNCTIONS ---
+  Future<Map<String, dynamic>> _getUserProfile() async {
+    final user = supabase.auth.currentUser;
+    if (user == null) return {'nama': 'Guest', 'role': 'User'};
     try {
-      // 1. Total Alat Tersedia (Menghitung baris di tabel 'alat')
-      final alatRes = await supabase
-          .from('alat')
-          .select('id_alat');
-
-      // 2. Total Alat Dipinjam (Berdasarkan status_transaksi di tabel 'peminjaman')
-      // Sesuai skema: id_pinjam & status_transaksi
-      final dipinjamRes = await supabase
-          .from('peminjaman')
-          .select('id_pinjam')
-          .eq('status_transaksi', 'dipinjam'); // Pastikan string 'dipinjam' sesuai isi DB Anda
-
-      // 3. List Alat Stok Menipis (Atribut: stok_total < 5)
-      final stokMenipisRes = await supabase
-          .from('alat')
-          .select('nama_alat, stok_total')
-          .lt('stok_total', 4)
-          .order('stok_total', ascending: true)
-          .limit(4);
-
-      // 4. Data Grafik (Placeholder: Anda bisa menghubungkan ini ke view/statistik DB nanti)
-      final grafikData = [
-        {'label': 'Gitar', 'value': 10.0},
-        {'label': 'Monitor', 'value': 15.0},
-        {'label': 'Proyektor', 'value': 10.0},
-        {'label': 'Kamera', 'value': 20.0},
-        {'label': 'Laptop', 'value': 15.0},
-      ];
-
-      return {
-        'tersedia': alatRes.length,
-        'dipinjam': dipinjamRes.length,
-        'stok_list': stokMenipisRes,
-        'grafik': grafikData,
-      };
+      final data = await supabase.from('users').select().eq('id_user', user.id).single();
+      return data;
     } catch (e) {
-      debugPrint("Error Fetching Data: $e");
-      return {
-        'tersedia': 0,
-        'dipinjam': 0,
-        'stok_list': [],
-        'grafik': [],
-      };
+      return {'nama': user.email?.split('@')[0], 'role': 'Error Load'};
     }
+  }
+
+  Stream<List<Map<String, dynamic>>> _getStokMenipis() {
+    return supabase
+        .from('alat')
+        .stream(primaryKey: ['id_alat'])
+        .order('stok_total', ascending: true)
+        .map((data) => data
+            .where((e) => (e['stok_total'] as int) < 10 && (e['stok_total'] as int) > 0)
+            .take(4)
+            .toList());
+  }
+
+  Future<int> _getTotalTersedia() async {
+    try {
+      final response = await supabase.from('alat').select('id_alat').gt('stok_total', 0);
+      return (response as List).length;
+    } catch (e) { return 0; }
+  }
+
+  Future<int> _getTotalDipinjam() async {
+    try {
+      final response = await supabase.from('peminjaman').select('id_peminjaman').eq('status', 'dipinjam');
+      return (response as List).length;
+    } catch (e) { return 0; }
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, dynamic>>(
-      future: _fetchDashboardData(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 20),
+              
+              /// --- HEADER ---
+              FutureBuilder<Map<String, dynamic>>(
+                future: _getUserProfile(),
+                builder: (context, snapshot) {
+                  final name = snapshot.data?['nama'] ?? "...";
+                  final roleRaw = snapshot.data?['role']?.toString() ?? "...";
+                  
+                  // LOGIKA CAPITALIZE: Mengubah 'admin' menjadi 'Admin'
+                  final role = roleRaw.isNotEmpty 
+                      ? roleRaw[0].toUpperCase() + roleRaw.substring(1).toLowerCase() 
+                      : "...";
 
-        final data = snapshot.data ?? {
-          'tersedia': 0,
-          'dipinjam': 0,
-          'stok_list': [],
-          'grafik': [],
-        };
+                  return Row(
+                    children: [
+                      const CircleAvatar(
+                        radius: 30,
+                        backgroundColor: AppColors.darkblue,
+                        child: Icon(Icons.person, color: Colors.white, size: 35),
+                      ),
+                      const SizedBox(width: 15),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.darkblue)),
+                          // Hapus .toUpperCase() dan ganti dengan variabel role yang sudah diolah
+                          Text(role, style: const TextStyle(fontSize: 16, color: AppColors.darkblue)),
+                        ],
+                      ),
+                    ],
+                  );
+                },
+              ),
 
-        return SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(25),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeader(context),
-                const SizedBox(height: 25),
-                _buildSectionTitle("Grafik Peminjamann Alat Paling Banyak"),
-                const SizedBox(height: 10),
-                
-                // Grafik dengan Garis Bantu Horizontal
-                _buildChartContainer(data['grafik']),
-                const SizedBox(height: 25),
+              const SizedBox(height: 30),
 
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              /// --- SECTION GRAFIK (FIXED BASELINE & PRECISION) ---
+              _sectionTitle("Grafik Peminjamann Alat Paling Banyak"),
+              
+              Container(
+                height: 250,
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(15, 20, 15, 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD1E4F3),
+                  borderRadius: BorderRadius.circular(15),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))
+                  ]
+                ),
+                child: Column(
                   children: [
-                    // Sisi Kiri: List Stok Menipis (Menggunakan stok_total)
                     Expanded(
-                      child: _buildInfoBox(
-                        child: Column(
-                          children: [
-                            const Text("List Alat Stok\nMenipis", 
-                              textAlign: TextAlign.center, 
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.darkblue)),
-                            const SizedBox(height: 10),
-                            const Divider(color: Colors.white, thickness: 2),
-                            if (data['stok_list'].isEmpty)
-                              const Padding(
-                                padding: EdgeInsets.all(8.0),
-                                child: Text("Semua stok aman", style: TextStyle(fontSize: 10)),
-                              )
-                            else
-                              ...List.generate(data['stok_list'].length, (index) {
-                                final item = data['stok_list'][index];
-                                return _buildStockRow("${index + 1}. ${item['nama_alat']}", "${item['stok_total']}");
-                              }),
-                          ],
-                        ),
+                      child: Row(
+                        children: [
+                          // Sumbu Y
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: List.generate(5, (index) => Text("${20 - (index * 5)}", 
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.black54))),
+                          ),
+                          const SizedBox(width: 10),
+                          // Area Batang & Grid
+                          Expanded(
+                            child: Stack(
+                              alignment: Alignment.bottomCenter,
+                              children: [
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: List.generate(5, (index) => Divider(
+                                    color: index == 4 ? Colors.grey: Colors.grey,
+                                    thickness: index == 4 ? 2 : 1, 
+                                    height: 1
+                                  )),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 2),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      _barItemOnly(10/20),
+                                      _barItemOnly(15/20),
+                                      _barItemOnly(10/20),
+                                      _barItemOnly(20/20),
+                                      _barItemOnly(15/20),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 15),
-                    
-                    // Sisi Kanan: Total Statistik
-                    Expanded(
-                      child: Column(
+                    const SizedBox(height: 8),
+                    // Label Nama Alat
+                    Padding(
+                      padding: const EdgeInsets.only(left: 30),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          _buildStatCard("Total Alat\nTersedia", "${data['tersedia']}", Icons.inventory_2_outlined),
-                          const SizedBox(height: 15),
-                          _buildStatCard("Total Alat\nDipinjam", "${data['dipinjam']}", Icons.handyman_outlined),
+                          _labelItem("Gitar"),
+                          _labelItem("Monitor"),
+                          _labelItem("Proyek."),
+                          _labelItem("Kamera"),
+                          _labelItem("Laptop"),
                         ],
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 25),
-                _buildLogButton(),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+              ),
 
-  // --- UI COMPONENTS ---
+              const SizedBox(height: 25),
 
-  Widget _buildHeader(BuildContext context) {
-    return Row(
-      children: [
-        const CircleAvatar(
-          radius: 25,
-          backgroundColor: Color(0xFFD1E4F3),
-          child: Icon(Icons.person_outline, color: AppColors.darkblue, size: 30),
-        ),
-        const SizedBox(width: 12),
-        const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Alena", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.darkblue)),
-            Text("Admin", style: TextStyle(fontSize: 12, color: AppColors.darkblue)),
-          ],
-        ),
-        const Spacer(),
-        IconButton(
-          onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LoginScreen())),
-          icon: const Icon(Icons.logout, color: AppColors.darkblue),
-        )
-      ],
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Row(
-      children: [
-        Container(width: 15, height: 15, color: AppColors.darkblue),
-        const SizedBox(width: 10),
-        Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-      ],
-    );
-  }
-
-  Widget _buildChartContainer(List grafik) {
-    return Container(
-      height: 220,
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: const Color(0xFFD1E4F3),
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 10, offset: const Offset(0, 5))
-        ],
-      ),
-      child: Stack(
-        children: [
-          // Garis Horizontal & Label Angka (0 - 25 sesuai gambar terbaru)
-          Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [25, 20, 15, 10, 5, 0].map((val) {
-              return Row(
+              /// --- STATS ROW ---
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(width: 20, child: Text("$val", style: const TextStyle(fontSize: 9, color: Colors.black54))),
-                  const Expanded(child: Divider(color: Colors.black26, thickness: 0.5)),
-                ],
-              );
-            }).toList(),
-          ),
-          // Batang Grafik
-          Padding(
-            padding: const EdgeInsets.only(left: 25, bottom: 5),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: grafik.map<Widget>((g) {
-                return Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Container(
-                      width: 25,
-                      height: (g['value'] as double) * 6, // Scaling height
-                      decoration: BoxDecoration(
-                        color: AppColors.darkblue,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
+                  Expanded(
+                    child: _buildCard("List Alat Stok Menipis", child: StreamBuilder<List<Map<String, dynamic>>>(
+                      stream: _getStokMenipis(),
+                      builder: (context, snap) {
+                        if (!snap.hasData || snap.data!.isEmpty) return const Text("Stok Aman");
+                        int i = 1;
+                        return Column(
+                          children: snap.data!.map((e) => _smallItem(i++, e['nama_alat'], e['stok_total'])).toList(),
+                        );
+                      }
+                    )),
+                  ),
+                  const SizedBox(width: 15),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        FutureBuilder<int>(
+                          future: _getTotalTersedia(),
+                          builder: (context, snap) => _statBox(Icons.inventory_2_outlined, "Total Alat Tersedia", "${snap.data ?? 0}"),
+                        ),
+                        const SizedBox(height: 15),
+                        FutureBuilder<int>(
+                          future: _getTotalDipinjam(),
+                          builder: (context, snap) => _statBox(Icons.handyman_outlined, "Total Alat Dipinjam", "${snap.data ?? 0}"),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(g['label'], style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold)),
-                  ],
-                );
-              }).toList(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+                  ),
+                ],
+              ),
 
-  Widget _buildInfoBox({required Widget child}) {
-    return Container(
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: const Color(0xFFD1E4F3),
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 4))
-        ],
-      ),
-      child: child,
-    );
-  }
-
-  Widget _buildStockRow(String name, String qty) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(name, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600)),
-              Text(qty, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.darkblue)),
+              const SizedBox(height: 25),
+              _logAktivitasBtn(context),
+              const SizedBox(height: 30),
             ],
           ),
-          const Divider(color: Colors.white, thickness: 1),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildStatCard(String title, String val, IconData icon) {
-    return _buildInfoBox(
-      child: Row(
-        children: [
-          Icon(icon, size: 30, color: AppColors.darkblue),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(title, textAlign: TextAlign.right, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
-                Text(val, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.darkblue)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // --- WIDGET HELPERS ---
 
-  Widget _buildLogButton() {
+  Widget _barItemOnly(double ratio) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+      width: 30,
+      height: 170 * ratio, // Tinggi maksimal disesuaikan agar presisi dengan garis 20
+      decoration: const BoxDecoration(
+        color: AppColors.darkblue,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(2)),
+      ),
+    );
+  }
+
+  Widget _labelItem(String label) {
+    return SizedBox(
+      width: 40,
+      child: Text(label, textAlign: TextAlign.center, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
+    );
+  }
+
+  Widget _sectionTitle(String t) => Padding(
+    padding: const EdgeInsets.only(bottom: 15),
+    child: Row(
+      children: [
+        Container(width: 18, height: 18, color: AppColors.darkblue),
+        const SizedBox(width: 10),
+        Text(t, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+      ],
+    ),
+  );
+
+  Widget _buildCard(String title, {required Widget child}) => Container(
+    padding: const EdgeInsets.all(15),
+    decoration: BoxDecoration(
+      color: const Color(0xFFD1E4F3), 
+      borderRadius: BorderRadius.circular(15),
+      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))]
+    ),
+    child: Column(
+      children: [
+        Text(title, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.darkblue, fontSize: 14)),
+        const SizedBox(height: 12),
+        child,
+      ],
+    ),
+  );
+
+  Widget _statBox(IconData icon, String label, String val) => Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: const Color(0xFFD1E4F3), 
+      borderRadius: BorderRadius.circular(15),
+      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))]
+    ),
+    child: Row(
+      children: [
+        Icon(icon, color: AppColors.darkblue, size: 30),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(label, textAlign: TextAlign.right, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+              Text(val, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.darkblue)),
+            ],
+          ),
+        )
+      ],
+    ),
+  );
+
+  Widget _smallItem(int index, String name, int count) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(child: Text("$index. $name", style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis)),
+        Text("$count", style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.darkblue, fontSize: 14)),
+      ],
+    ),
+  );
+
+  Widget _logAktivitasBtn(BuildContext context) => InkWell(
+    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LogAktivitasScreen())),
+    child: Container(
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFFD1E4F3),
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5, offset: const Offset(0, 2))
-        ],
+        color: const Color(0xFFD1E4F3), 
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))]
       ),
       child: const Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text("Log Aktivitas", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.darkblue)),
-          Spacer(),
-          Icon(Icons.chevron_right, color: AppColors.darkblue),
+          Text("Log Aktivitas", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.darkblue, fontSize: 18)),
+          Icon(Icons.arrow_forward_ios, color: AppColors.darkblue, size: 20),
         ],
       ),
-    );
-  }
+    ),
+  );
 }

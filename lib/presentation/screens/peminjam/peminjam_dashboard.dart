@@ -1,40 +1,107 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_colors.dart';
-import '../auth/login_screen.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../presentation/screens/admin/tabs/pengaturan_tab.dart';
+// Menggunakan UI pengaturan yang sudah ada
 
-class PeminjamDashboard extends StatelessWidget {
+class PeminjamDashboard extends StatefulWidget {
   const PeminjamDashboard({super.key});
+
+  @override
+  State<PeminjamDashboard> createState() => _PeminjamDashboardState();
+}
+
+class _PeminjamDashboardState extends State<PeminjamDashboard> {
+  int _selectedIndex = 0;
+
+  // Daftar halaman untuk Peminjam sesuai gambar
+  final List<Widget> _pages = [
+    const Center(child: Text("Beranda Peminjam", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))),
+    const Center(child: Text("Halaman Daftar Alat")),
+    const Center(child: Text("Halaman Riwayat Peminjaman")),
+    const PengaturanTab(), // UI Pengaturan sama untuk semua role
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("SIMBARA - PEMINJAM",
-            style: TextStyle(color: AppColors.white)),
-        backgroundColor: AppColors.peminjam,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: AppColors.white),
-            onPressed: () => Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (context) => const LoginScreen())),
-          )
-        ],
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _pages,
       ),
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.shopping_cart, size: 100, color: AppColors.peminjam),
-            SizedBox(height: 20),
-            Text(
-              "Katalog Alat",
-              style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.peminjam),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          // Border radius landai hanya di pojok atas (sesuai gambar)
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, -4),
             ),
-            Text("Peminjaman Alat & Riwayat"),
           ],
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+          child: Theme(
+            data: ThemeData(
+              useMaterial3: true,
+              navigationBarTheme: NavigationBarThemeData(
+                backgroundColor: Colors.white,
+                indicatorColor: const Color(0xFFD0E4FF), // Lingkaran biru muda saat aktif
+                iconTheme: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return const IconThemeData(color: AppColors.darkblue);
+                  }
+                  return const IconThemeData(color: Colors.grey);
+                }),
+                labelTextStyle: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return const TextStyle(
+                        color: AppColors.darkblue, fontWeight: FontWeight.bold, fontSize: 12);
+                  }
+                  return const TextStyle(color: Colors.grey, fontSize: 12);
+                }),
+              ),
+            ),
+            child: NavigationBar(
+              height: 65, // Tinggi ceper agar tidak terlalu keatas
+              selectedIndex: _selectedIndex,
+              onDestinationSelected: (index) {
+                setState(() {
+                  _selectedIndex = index;
+                });
+              },
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.home_outlined),
+                  selectedIcon: Icon(Icons.home),
+                  label: 'Beranda',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.inventory_2_outlined),
+                  selectedIcon: Icon(Icons.inventory_2),
+                  label: 'Alat',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.history_outlined),
+                  selectedIcon: Icon(Icons.history),
+                  label: 'Riwayat',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.settings_outlined),
+                  selectedIcon: Icon(Icons.settings),
+                  label: 'Pengaturan',
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
