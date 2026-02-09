@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../presentation/screens/admin/tabs/pengaturan_tab.dart';
 
-
 class PetugasDashboard extends StatefulWidget {
   const PetugasDashboard({super.key});
 
@@ -14,11 +13,13 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = [
-    const Center(child: Text("Beranda Petugas", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))),
+    const Center(
+        child: Text("Beranda Petugas",
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))),
     const Center(child: Text("Halaman Persetujuan")),
     const Center(child: Text("Halaman Pengembalian")),
     const Center(child: Text("Halaman Laporan")),
-    const PengaturanTab(), 
+    const PengaturanTab(),
   ];
 
   @override
@@ -28,7 +29,7 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
         index: _selectedIndex,
         children: _pages,
       ),
-        bottomNavigationBar: Container(
+      bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Colors.white,
           // Radius hanya di pojok kiri dan kanan atas agar landai
@@ -38,7 +39,8 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05), // Shadow tipis sesuai gambar
+              color: Colors.black
+                ..withValues(alpha: 0.5), // Shadow tipis sesuai gambar
               blurRadius: 10,
               offset: const Offset(0, -4),
             ),
@@ -54,11 +56,14 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
               useMaterial3: true,
               navigationBarTheme: NavigationBarThemeData(
                 backgroundColor: Colors.white,
-                indicatorColor: const Color(0xFFD0E4FF), // Lingkaran biru muda di gambar
+                indicatorColor:
+                    const Color(0xFFD0E4FF), // Lingkaran biru muda di gambar
                 labelTextStyle: WidgetStateProperty.resolveWith((states) {
                   if (states.contains(WidgetState.selected)) {
                     return const TextStyle(
-                        color: AppColors.darkblue, fontWeight: FontWeight.bold, fontSize: 12);
+                        color: AppColors.darkblue,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12);
                   }
                   return const TextStyle(color: Colors.grey, fontSize: 12);
                 }),

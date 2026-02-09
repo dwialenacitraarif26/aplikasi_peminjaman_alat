@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../presentation/screens/admin/tabs/pengaturan_tab.dart';
-// Menggunakan UI pengaturan yang sudah ada
+import '../peminjam/tabs/alat_peminjam_tab.dart';
 
 class PeminjamDashboard extends StatefulWidget {
   const PeminjamDashboard({super.key});
@@ -15,8 +15,10 @@ class _PeminjamDashboardState extends State<PeminjamDashboard> {
 
   // Daftar halaman untuk Peminjam sesuai gambar
   final List<Widget> _pages = [
-    const Center(child: Text("Beranda Peminjam", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))),
-    const Center(child: Text("Halaman Daftar Alat")),
+    const Center(
+        child: Text("Beranda Peminjam",
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))),
+    const AlatPeminjamTab(),
     const Center(child: Text("Halaman Riwayat Peminjaman")),
     const PengaturanTab(), // UI Pengaturan sama untuk semua role
   ];
@@ -38,7 +40,7 @@ class _PeminjamDashboardState extends State<PeminjamDashboard> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 10,
               offset: const Offset(0, -4),
             ),
@@ -54,7 +56,8 @@ class _PeminjamDashboardState extends State<PeminjamDashboard> {
               useMaterial3: true,
               navigationBarTheme: NavigationBarThemeData(
                 backgroundColor: Colors.white,
-                indicatorColor: const Color(0xFFD0E4FF), // Lingkaran biru muda saat aktif
+                indicatorColor:
+                    const Color(0xFFD0E4FF), // Lingkaran biru muda saat aktif
                 iconTheme: WidgetStateProperty.resolveWith((states) {
                   if (states.contains(WidgetState.selected)) {
                     return const IconThemeData(color: AppColors.darkblue);
@@ -64,7 +67,9 @@ class _PeminjamDashboardState extends State<PeminjamDashboard> {
                 labelTextStyle: WidgetStateProperty.resolveWith((states) {
                   if (states.contains(WidgetState.selected)) {
                     return const TextStyle(
-                        color: AppColors.darkblue, fontWeight: FontWeight.bold, fontSize: 12);
+                        color: AppColors.darkblue,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12);
                   }
                   return const TextStyle(color: Colors.grey, fontSize: 12);
                 }),
@@ -85,7 +90,7 @@ class _PeminjamDashboardState extends State<PeminjamDashboard> {
                   label: 'Beranda',
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.inventory_2_outlined),
+                  icon: Icon(Icons.home_work_outlined),
                   selectedIcon: Icon(Icons.inventory_2),
                   label: 'Alat',
                 ),

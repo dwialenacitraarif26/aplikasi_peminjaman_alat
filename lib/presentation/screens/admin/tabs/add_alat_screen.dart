@@ -190,7 +190,7 @@ void _saveData() async {
                         decoration: BoxDecoration(
                           color: const Color(0xFFEFF4F9),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: AppColors.darkblue.withOpacity(0.2)),
+                          border: Border.all(color: AppColors.darkblue.withValues(alpha: 0.1)),
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(20),

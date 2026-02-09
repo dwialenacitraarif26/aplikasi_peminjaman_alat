@@ -42,7 +42,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 10,
               spreadRadius: 2,
               offset: const Offset(0, -2), // Bayangan halus ke atas
@@ -84,7 +84,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         decoration: BoxDecoration(
           // Background biru muda oval pada ikon yang dipilih sesuai gambar
-          color: isSelected ? AppColors.inputBg.withOpacity(0.6) : Colors.transparent,
+          color: isSelected ? AppColors.inputBg.withValues(alpha: 0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Icon(icon),

@@ -108,7 +108,7 @@ class _HomeTabState extends State<HomeTab> {
                   color: const Color(0xFFD1E4F3),
                   borderRadius: BorderRadius.circular(15),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 4))
                   ]
                 ),
                 child: Column(
@@ -258,7 +258,7 @@ class _HomeTabState extends State<HomeTab> {
     decoration: BoxDecoration(
       color: const Color(0xFFD1E4F3), 
       borderRadius: BorderRadius.circular(15),
-      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))]
+      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 10, offset: const Offset(0, 4))]
     ),
     child: Column(
       children: [
@@ -274,7 +274,7 @@ class _HomeTabState extends State<HomeTab> {
     decoration: BoxDecoration(
       color: const Color(0xFFD1E4F3), 
       borderRadius: BorderRadius.circular(15),
-      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))]
+      boxShadow: [BoxShadow(color: Colors.black..withValues(alpha: 0.5), blurRadius: 10, offset: const Offset(0, 4))]
     ),
     child: Row(
       children: [
@@ -311,7 +311,7 @@ class _HomeTabState extends State<HomeTab> {
       decoration: BoxDecoration(
         color: const Color(0xFFD1E4F3), 
         borderRadius: BorderRadius.circular(15),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))]
+        boxShadow: [BoxShadow(color: Colors.black..withValues(alpha: 0.5), blurRadius: 10, offset: const Offset(0, 4))]
       ),
       child: const Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
