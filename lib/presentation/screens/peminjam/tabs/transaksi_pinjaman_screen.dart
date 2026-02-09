@@ -350,7 +350,7 @@ class _TransaksiPinjamanScreenState extends State<TransaksiPinjamanScreen> {
   }
 
   Widget _qtyBtn(IconData icon, VoidCallback onTap) => GestureDetector(
-        onTap: onTap,q
+        onTap: onTap,
         child: Icon(icon, color: AppColors.darkblue, size: 22),
       );
 
