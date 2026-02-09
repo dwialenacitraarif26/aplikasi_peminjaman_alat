@@ -40,7 +40,7 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
           boxShadow: [
             BoxShadow(
               color: Colors.black
-                ..withValues(alpha: 0.5), // Shadow tipis sesuai gambar
+                ..withOpacity(0.1), // Shadow tipis sesuai gambar
               blurRadius: 10,
               offset: const Offset(0, -4),
             ),

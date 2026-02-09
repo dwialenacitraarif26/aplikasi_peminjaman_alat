@@ -146,7 +146,7 @@ class _AlatTabState extends State<AlatTab> {
                         crossAxisCount: 2,
                         crossAxisSpacing: 16,
                         mainAxisSpacing: 16,
-                        childAspectRatio: 0.72,
+                        childAspectRatio: 0.62,
                       ),
                       itemBuilder: (context, index) {
                         return _alatCard(snapshot.data![index]);

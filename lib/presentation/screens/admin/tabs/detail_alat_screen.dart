@@ -71,7 +71,7 @@ class DetailAlatScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 15),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
       decoration: BoxDecoration(
-        color: const Color(0xFFD1E4F3).withValues(alpha: 0.1),
+        color: AppColors.inputBg,
         borderRadius: BorderRadius.circular(15),
       ),
       child: Row(

@@ -24,45 +24,44 @@ class _AddPenggunaScreenState extends State<AddPenggunaScreen> {
   final List<String> _roles = ['admin', 'petugas', 'peminjam'];
 
 Future<void> _handleTambah() async {
-  // Validasi awal agar tidak ada field kosong
   if (!_formKey.currentState!.validate() || _selectedRole == null) return;
-
   setState(() => _isLoading = true);
 
   try {
-    // LANGKAH 1: Daftarkan User ke Authentication (Akun Login)
+    // 1. Daftar ke Auth
     final AuthResponse res = await supabase.auth.signUp(
       email: _emailController.text.trim(),
-      password: _passController.text.trim(),
+      password: _passController.text,
+      data: {
+        'nama': _namaController.text.trim(),
+        'role': _selectedRole,
+      },
     );
 
     if (res.user != null) {
-      // LANGKAH 2: Simpan Data ke Tabel 'users' secara manual
-      // Karena trigger database sudah dihapus, bagian ini WAJIB ada
+      // 2. Masukkan ke tabel users secara manual (lebih terpantau error-nya)
       await supabase.from('users').insert({
-        'id_user': res.user!.id,               // Mengambil ID dari akun yang baru dibuat
+        'id_user': res.user!.id, 
         'email': _emailController.text.trim(),
         'nama': _namaController.text.trim(),
-        'role': _selectedRole!.toLowerCase(),  // Mengambil role dari pilihan dropdown
+        'role': _selectedRole!.toLowerCase(),
       });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Pengguna berhasil ditambahkan!")),
+          const SnackBar(content: Text("User berhasil ditambahkan!")),
         );
-        Navigator.pop(context); // Kembali ke halaman daftar
+        Navigator.pop(context);
       }
     }
-  } on AuthException catch (e) {
-    // Menangkap error jika email sudah terdaftar atau password terlalu lemah
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Gagal: ${e.message}"), backgroundColor: Colors.red),
-    );
   } catch (e) {
-    debugPrint("Error: $e");
-    // Penanganan jika terjadi error duplikat atau koneksi
-    if (e.toString().contains('23505') && mounted) {
-      Navigator.pop(context);
+    // Lihat pesan error asli di Debug Console
+    print("DETAIL ERROR: $e");
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+      );
     }
   } finally {
     if (mounted) setState(() => _isLoading = false);
