@@ -13,6 +13,7 @@ class PengembalianPetugasTab extends StatefulWidget {
 class _PengembalianPetugasTabState extends State<PengembalianPetugasTab> {
   final supabase = Supabase.instance.client;
   String _activeTab = "Pengajuan"; 
+  // ignore: unused_field
   String _searchQuery = "";
 
   Stream<List<Map<String, dynamic>>> _getPengembalianStream() {
