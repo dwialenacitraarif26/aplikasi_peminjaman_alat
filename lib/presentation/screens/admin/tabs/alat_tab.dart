@@ -19,22 +19,25 @@ class _AlatTabState extends State<AlatTab> {
   int? selectedCategory;
 
   Stream<List<Map<String, dynamic>>> alatStream() {
-    return supabase
-        .from('alat')
-        .stream(primaryKey: ['id_alat'])
-        .order('nama_alat')
-        .map((data) {
-          return data.where((alat) {
-            final matchSearch = alat['nama_alat']
-                .toString()
-                .toLowerCase()
-                .contains(search.toLowerCase());
-            final matchCat = selectedCategory == null ||
-                alat['kategori_id'] == selectedCategory;
-            return matchSearch && matchCat;
-          }).toList();
-        });
-  }
+  var query = supabase.from('alat').stream(primaryKey: ['id_alat']);
+
+  // Stream di Supabase tidak mendukung .eq() langsung, 
+  // Jadi filter manual di .map sudah benar, TAPI pastikan data ID-nya pas.
+  return query.order('nama_alat').map((data) {
+    return data.where((alat) {
+      final matchSearch = alat['nama_alat']
+          .toString()
+          .toLowerCase()
+          .contains(search.toLowerCase());
+      
+      // Pastikan tipe data kategori_id sama (int dengan int)
+      final matchCat = selectedCategory == null ||
+          alat['kategori_id'] == selectedCategory;
+          
+      return matchSearch && matchCat;
+    }).toList();
+  });
+}
 
   @override
   Widget build(BuildContext context) {

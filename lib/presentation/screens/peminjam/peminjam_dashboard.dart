@@ -90,7 +90,7 @@ class _PeminjamDashboardState extends State<PeminjamDashboard> {
                 ),
                 NavigationDestination(
                   icon: Icon(Icons.home_work_outlined),
-                  selectedIcon: Icon(Icons.inventory_2),
+                  selectedIcon: Icon(Icons.home_work),
                   label: 'Alat',
                 ),
                 NavigationDestination(

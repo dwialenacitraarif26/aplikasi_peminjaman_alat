@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../presentation/screens/admin/tabs/pengaturan_tab.dart';
 import '../petugas/tabs/persetujuan_tab.dart';
+import '../petugas/tabs/pengembalian_petugas_tab.dart';
 
 class PetugasDashboard extends StatefulWidget {
   const PetugasDashboard({super.key});
@@ -18,7 +19,7 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
         child: Text("Beranda Petugas",
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))),
     const PersetujuanTab(),
-    const Center(child: Text("Halaman Pengembalian")),
+    const PengembalianPetugasTab(),
     const Center(child: Text("Halaman Laporan")),
     const PengaturanTab(),
   ];
