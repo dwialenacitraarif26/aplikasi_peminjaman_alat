@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../presentation/screens/admin/tabs/pengaturan_tab.dart';
 import '../peminjam/tabs/alat_peminjam_tab.dart';
+import '../peminjam/tabs/home_tab.dart';
 
 class PeminjamDashboard extends StatefulWidget {
   const PeminjamDashboard({super.key});
@@ -15,9 +16,7 @@ class _PeminjamDashboardState extends State<PeminjamDashboard> {
 
   // Daftar halaman untuk Peminjam sesuai gambar
   final List<Widget> _pages = [
-    const Center(
-        child: Text("Beranda Peminjam",
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))),
+    const HomeTab(),
     const AlatPeminjamTab(),
     const Center(child: Text("Halaman Riwayat Peminjaman")),
     const PengaturanTab(), // UI Pengaturan sama untuk semua role
