@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:google_sign_in/google_sign_in.dart'; // Library kunci untuk Native Pop-up
 import '../../../core/theme/app_colors.dart';
 import '../../../logic/auth_controller.dart';
 import '../admin/admin_dashboard.dart';
@@ -22,23 +23,55 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   String? _emailError;
 
-  // ================= GOOGLE LOGIN (FIX) =================
+  // ================= GOOGLE LOGIN NATIVE (FIXED) =================
+  // Fungsi ini akan memunculkan pop-up akun Google langsung di HP/Simulator
   Future<void> _handleGoogleLogin() async {
+    setState(() => _isLoading = true);
     try {
-      await Supabase.instance.client.auth.signInWithOAuth(
-        OAuthProvider.google,
-        redirectTo: 'http://localhost:3000',
+      // 1. Konfigurasi Google Sign-In
+      // GANTI 'YOUR_WEB_CLIENT_ID' dengan Client ID dari Google Cloud Console / Firebase Settings
+      const webClientId = 'MASUKKAN_WEB_CLIENT_ID_KAMU_DISINI.apps.googleusercontent.com';
+
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        serverClientId: webClientId,
       );
+
+      // 2. Trigger Pop-up Native
+      final googleUser = await googleSignIn.signIn();
+      if (googleUser == null) {
+        setState(() => _isLoading = false);
+        return; // User membatalkan pilihan akun
+      }
+
+      final googleAuth = await googleUser.authentication;
+      final accessToken = googleAuth.accessToken;
+      final idToken = googleAuth.idToken;
+
+      if (idToken == null) throw 'ID Token tidak ditemukan!';
+
+      // 3. Daftarkan kredensial ke Supabase
+      final response = await Supabase.instance.client.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+        accessToken: accessToken,
+      );
+
+      if (response.user != null) {
+        _showSnackBar("Login Berhasil!");
+        // Redirect ke dashboard peminjam sebagai default
+        _navigateToDashboard("peminjam");
+      }
     } catch (e) {
-      _showSnackBar("Login Google gagal", isError: true);
+      print("Error Detail: $e");
+      _showSnackBar("Gagal memunculkan pop-up login: $e", isError: true);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
-  // ======================================================
+  // ==============================================================
 
   void _handleLogin() async {
-    setState(() {
-      _emailError = null;
-    });
+    setState(() => _emailError = null);
 
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       _showSnackBar("Email dan Password tidak boleh kosong", isError: true);
@@ -56,9 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (result == null) return;
 
     if (result.startsWith('error:')) {
-      setState(() {
-        _emailError = "Email atau Password salah";
-      });
+      setState(() => _emailError = "Email atau Password salah");
     } else {
       _navigateToDashboard(result);
     }
@@ -66,7 +97,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _navigateToDashboard(String role) {
     Widget page;
-
     switch (role.toLowerCase()) {
       case 'admin':
         page = const AdminDashboard();
@@ -108,8 +138,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 60),
-              const SizedBox(height: 50),
+              const SizedBox(height: 110),
               const Text('Haii!',
                   style: TextStyle(
                       fontSize: 32,
@@ -140,7 +169,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 45),
 
-              // LOGIN BUTTON
+              // TOMBOL LOGIN MANUAL
               SizedBox(
                 width: double.infinity,
                 height: 55,
@@ -160,15 +189,20 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 20),
 
-              // GOOGLE BUTTON (FIX)
+              // TOMBOL GOOGLE (NATIVE POP-UP)
               SizedBox(
                 width: double.infinity,
                 height: 55,
                 child: OutlinedButton.icon(
-                  onPressed: _handleGoogleLogin,
-                  icon: const Icon(Icons.login, color: Colors.red),
+                  onPressed: _isLoading ? null : _handleGoogleLogin,
+                  icon: Image.network(
+                    'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg',
+                    height: 24,
+                    errorBuilder: (context, error, stackTrace) => 
+                        const Icon(Icons.login, color: Colors.red),
+                  ),
                   label: const Text(
-                    "Login with Google",
+                    "Continue with Google",
                     style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -194,6 +228,7 @@ class _LoginScreenState extends State<LoginScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
           decoration: const BoxDecoration(
             color: AppColors.inputBg,
           ),
@@ -203,7 +238,14 @@ class _LoginScreenState extends State<LoginScreen> {
             decoration: InputDecoration(
               hintText: hint,
               prefixIcon: Icon(icon),
+              suffixIcon: isPass 
+                ? IconButton(
+                    icon: Icon(_isObscure ? Icons.visibility_off : Icons.visibility),
+                    onPressed: () => setState(() => _isObscure = !_isObscure),
+                  )
+                : null,
               border: InputBorder.none,
+              errorText: errorText,
             ),
           ),
         ),
