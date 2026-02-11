@@ -51,7 +51,7 @@ Widget build(BuildContext context) {
                 // Sekarang height: 0 atau kecil akan benar-benar terlihat rapat
                 SizedBox(height: 0), 
                 Text(
-                  'Sistem Peminjaman Alat Brantas',
+                  'Sistem Peminjaman Barang Brantas',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 20,

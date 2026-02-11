@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1099038800883",
+    "project_id": "simbara-960e1",
+    "storage_bucket": "simbara-960e1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1099038800883:android:77f3853d28983591a43086",
+        "android_client_info": {
+          "package_name": "com.example.peminjaman_alat"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA16FTWO3H8Hl4UVJiZuUvZdSs8HvXr0LI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

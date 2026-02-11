@@ -3,6 +3,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../presentation/screens/admin/tabs/pengaturan_tab.dart';
 import '../peminjam/tabs/alat_peminjam_tab.dart';
 import '../peminjam/tabs/home_tab.dart';
+import '../peminjam/tabs/riwayat_tab.dart';
 
 class PeminjamDashboard extends StatefulWidget {
   const PeminjamDashboard({super.key});
@@ -18,7 +19,7 @@ class _PeminjamDashboardState extends State<PeminjamDashboard> {
   final List<Widget> _pages = [
     const HomeTab(),
     const AlatPeminjamTab(),
-    const Center(child: Text("Halaman Riwayat Peminjaman")),
+    const RiwayatTab(),
     const PengaturanTab(), // UI Pengaturan sama untuk semua role
   ];
 

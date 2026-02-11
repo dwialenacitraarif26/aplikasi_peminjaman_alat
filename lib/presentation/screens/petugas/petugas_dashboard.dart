@@ -3,6 +3,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../presentation/screens/admin/tabs/pengaturan_tab.dart';
 import '../petugas/tabs/persetujuan_tab.dart';
 import '../petugas/tabs/pengembalian_petugas_tab.dart';
+import '../petugas/tabs/home_petugas_tab.dart';
+import '../petugas/tabs/laporan_petugas_tab.dart';
 
 class PetugasDashboard extends StatefulWidget {
   const PetugasDashboard({super.key});
@@ -15,12 +17,10 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = [
-    const Center(
-        child: Text("Beranda Petugas",
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))),
+    const HomePetugasTab(),
     const PersetujuanTab(),
     const PengembalianPetugasTab(),
-    const Center(child: Text("Halaman Laporan")),
+    const LaporanPetugasTab(),
     const PengaturanTab(),
   ];
 
@@ -41,8 +41,8 @@ class _PetugasDashboardState extends State<PetugasDashboard> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black
-                ..withOpacity(0.1), // Shadow tipis sesuai gambar
+              color: Colors.grey
+                ..withOpacity(0.5), // Shadow tipis sesuai gambar
               blurRadius: 10,
               offset: const Offset(0, -4),
             ),

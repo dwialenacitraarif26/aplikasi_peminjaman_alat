@@ -173,7 +173,7 @@ class _AlatPeminjamTabState extends State<AlatPeminjamTab> {
                         crossAxisCount: 2,
                         crossAxisSpacing: 16,
                         mainAxisSpacing: 16,
-                        childAspectRatio: 0.80,
+                        childAspectRatio: 0.88,
                       ),
                       itemBuilder: (context, index) {
                         return _alatCard(snapshot.data![index]);

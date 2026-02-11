@@ -170,21 +170,74 @@ class _TransaksiPinjamanScreenState extends State<TransaksiPinjamanScreen> {
   }
 
   // --- Helper Widgets ---
+  // --- Helper Widgets ---
   Widget _buildCartItem(Map<String, dynamic> alat) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: const Color(0xFFF5F5F5), borderRadius: BorderRadius.circular(15)),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F5F5), 
+        borderRadius: BorderRadius.circular(15),
+      ),
       child: Row(
         children: [
-          ClipRRect(borderRadius: BorderRadius.circular(10), child: alat['foto_url'] != null ? Image.network(alat['foto_url'], width: 60, height: 60, fit: BoxFit.cover) : const Icon(Icons.image, size: 60)),
+          // Foto Alat
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10), 
+            child: alat['foto_url'] != null 
+              ? Image.network(alat['foto_url'], width: 60, height: 60, fit: BoxFit.cover) 
+              : const Icon(Icons.image, size: 60),
+          ),
           const SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(alat['nama_alat'], style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.darkblue)), const Text("Elektronik", style: TextStyle(fontSize: 12, color: Colors.grey))])),
-          Row(children: [
-            _qtyBtn(Icons.remove_circle_outline, () { if (alat['qty'] > 1) CartController.updateQty(alat['id_alat'], -1); }),
-            Padding(padding: const EdgeInsets.symmetric(horizontal: 10), child: Text("${alat['qty']}", style: const TextStyle(fontWeight: FontWeight.bold))),
-            _qtyBtn(Icons.add_circle_outline, () => CartController.updateQty(alat['id_alat'], 1)),
-          ])
+          
+          // Informasi Alat
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start, 
+              children: [
+                Text(
+                  alat['nama_alat'], 
+                  style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.darkblue),
+                ), 
+                const Text("Elektronik", style: TextStyle(fontSize: 12, color: Colors.grey)),
+              ],
+            ),
+          ),
+          
+          // Kontrol Qty
+          Row(
+            children: [
+              _qtyBtn(Icons.remove_circle_outline, () { 
+                if (alat['qty'] > 1) CartController.updateQty(alat['id_alat'], -1); 
+              }),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10), 
+                child: Text("${alat['qty']}", style: const TextStyle(fontWeight: FontWeight.bold)),
+              ),
+              _qtyBtn(Icons.add_circle_outline, () => CartController.updateQty(alat['id_alat'], 1)),
+            ],
+          ),
+          
+          // Divider Kecil
+          Container(
+            height: 30,
+            width: 1,
+            color: Colors.grey.withOpacity(0.3),
+            margin: const EdgeInsets.symmetric(horizontal: 8),
+          ),
+          
+          // TOMBOL HAPUS
+          GestureDetector(
+            onTap: () {
+              // Panggil fungsi hapus dari controller
+              CartController.removeItem(alat['id_alat']);
+            },
+            child: const Icon(
+              Icons.delete, 
+              color: AppColors.darkblue, 
+              size: 24,
+            ),
+          ),
         ],
       ),
     );
