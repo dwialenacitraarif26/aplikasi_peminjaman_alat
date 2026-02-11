@@ -14,7 +14,6 @@ class LaporanPetugasTab extends StatefulWidget {
 
 class _LaporanPetugasTabState extends State<LaporanPetugasTab> {
   final supabase = Supabase.instance.client;
-  bool _isLoading = false;
 
   // Daftar bulan untuk ditampilkan (Bisa dibuat dinamis, tapi ini contoh untuk 6 bulan terakhir)
   List<DateTime> _getMonthsList() {

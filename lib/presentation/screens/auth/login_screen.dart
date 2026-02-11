@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../logic/auth_controller.dart';
 import '../admin/admin_dashboard.dart';
@@ -20,6 +21,19 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isObscure = true;
   bool _isLoading = false;
   String? _emailError;
+
+  // ================= GOOGLE LOGIN (FIX) =================
+  Future<void> _handleGoogleLogin() async {
+    try {
+      await Supabase.instance.client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: 'http://localhost:3000',
+      );
+    } catch (e) {
+      _showSnackBar("Login Google gagal", isError: true);
+    }
+  }
+  // ======================================================
 
   void _handleLogin() async {
     setState(() {
@@ -46,7 +60,6 @@ class _LoginScreenState extends State<LoginScreen> {
         _emailError = "Email atau Password salah";
       });
     } else {
-      // Navigasi ke dashboard jika sukses
       _navigateToDashboard(result);
     }
   }
@@ -54,7 +67,6 @@ class _LoginScreenState extends State<LoginScreen> {
   void _navigateToDashboard(String role) {
     Widget page;
 
-    // Menentukan halaman tujuan berdasarkan role
     switch (role.toLowerCase()) {
       case 'admin':
         page = const AdminDashboard();
@@ -70,7 +82,6 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
     }
 
-    // PERBAIKAN: Menambahkan Navigator agar benar-benar berpindah halaman
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => page),
@@ -98,17 +109,6 @@ class _LoginScreenState extends State<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 60),
-              Center(
-                child: Image.asset(
-                  'assets/images/login.png',
-                  width: 150,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => const Icon(
-                      Icons.image,
-                      size: 50,
-                      color: AppColors.primary),
-                ),
-              ),
               const SizedBox(height: 50),
               const Text('Haii!',
                   style: TextStyle(
@@ -121,20 +121,26 @@ class _LoginScreenState extends State<LoginScreen> {
                       fontWeight: FontWeight.w900,
                       color: AppColors.primary)),
               const SizedBox(height: 35),
+
               _buildInput(
                 hint: "E-mail",
                 icon: Icons.email,
                 controller: _emailController,
                 errorText: _emailError,
               ),
+
               const SizedBox(height: 30),
+
               _buildInput(
                 hint: "Password",
                 icon: Icons.lock,
                 controller: _passwordController,
                 isPass: true,
               ),
+
               const SizedBox(height: 45),
+
+              // LOGIN BUTTON
               SizedBox(
                 width: double.infinity,
                 height: 55,
@@ -143,15 +149,31 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: AppColors.white,
-                    elevation: 0,
-                    shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.zero),
                   ),
                   child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
                       : const Text('Login',
                           style: TextStyle(
                               fontSize: 25, fontWeight: FontWeight.bold)),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // GOOGLE BUTTON (FIX)
+              SizedBox(
+                width: double.infinity,
+                height: 55,
+                child: OutlinedButton.icon(
+                  onPressed: _handleGoogleLogin,
+                  icon: const Icon(Icons.login, color: Colors.red),
+                  label: const Text(
+                    "Login with Google",
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary),
+                  ),
                 ),
               ),
             ],
@@ -172,43 +194,19 @@ class _LoginScreenState extends State<LoginScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          // PERBAIKAN: Menghilangkan border merah, hanya warna background saja
           decoration: const BoxDecoration(
             color: AppColors.inputBg,
           ),
           child: TextField(
             controller: controller,
             obscureText: isPass ? _isObscure : false,
-            style: const TextStyle(color: AppColors.primary, fontSize: 15),
-            onChanged: (value) {
-              if (_emailError != null) setState(() => _emailError = null);
-            },
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: const TextStyle(color: AppColors.primary),
-              prefixIcon: Icon(icon, color: AppColors.primary),
-              suffixIcon: isPass
-                  ? IconButton(
-                      icon: Icon(
-                          _isObscure ? Icons.visibility_off : Icons.visibility,
-                          color: AppColors.primary),
-                      onPressed: () => setState(() => _isObscure = !_isObscure),
-                    )
-                  : null,
+              prefixIcon: Icon(icon),
               border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(vertical: 18),
             ),
           ),
         ),
-        if (errorText != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 8, left: 2),
-            child: Text(
-              errorText,
-              style: const TextStyle(
-                  color: Colors.red, fontSize: 12, fontWeight: FontWeight.w600),
-            ),
-          ),
       ],
     );
   }
